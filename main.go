@@ -28,9 +28,64 @@ const (
 
 type (
 	todoModel struct {
-		ID        bson.ObjectId `"bson:"_id,omitempty"`
+		ID        bson.ObjectId `bson:"_id,omitempty"`
 		Title     string `bson:"title"`
 		Completed bool `bson:"completed"`
-		CreatedAt time.Time `bson:"createdat"`
+		CreatedAt time.Time `bson:"createdAt"`
+	}
+
+	todo struct {
+		ID        string `json:"id"`
+		Title     string `json:"title"`
+		Completed bool `json:"completed"`
+		CreatedAt time.Time `json:"created_at"`
 	}
 )
+
+//helps to connect with Database
+func init(){
+	rnd = renderer.New()
+	sess, err := mgo.Dial(hostName)
+	checkErr(err)
+	sess.SetMode(mgo.Monotonic, true)
+	db = sess.DB(dbName)
+}
+
+func main(){
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Get("/", homeHandler)
+	r.Mount("/todo", todoHandlers())
+
+	srv := &http.Server{
+		Addr: port,
+		Handler: r,
+		ReadTimeout: 60*time.Second,
+		WriteTimeout: 60*time.Second,
+		IdleTimeout: 60*time.Second,
+	}
+
+	go func(){
+		log.Println("Listening to Port", port)
+		if err := srv.ListenAndServe(); err != nil{
+			log.Printf("listen:%\n", err)
+		}
+	}()
+}
+
+func todoHandlers() http.Handler{
+	rg := chi.NewRouter()
+	rg.Group(func(r chi.Router){
+		r.Get("/", fetchTodos)
+		r.Post("/", createTodo)
+		r.Put("/{id}", updateTodo)
+		r.Delete("{/id}", deleteTodo)
+	})
+}
+
+
+func checkErr(err error){
+	if err != nil{
+		log.Fatal(err)
+	}
+}
