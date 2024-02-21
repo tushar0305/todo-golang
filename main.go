@@ -51,7 +51,20 @@ func init(){
 	db = sess.DB(dbName)
 }
 
+func homeHandler(w http.ResponseWriter, r *http.Request){
+	err := rnd.Template(w, http.StatusOK, []string{"static/home.tpl"}, nil)
+	checkErr(err)
+}
+
+func fetchTodo(w http.ResponseWriter, r *http.Request){
+	todos := []todoModel{}
+
+	if err := db.C(colle)
+}
+
 func main(){
+	stopChan := make(chan os.Signal)
+	signal.Notify(stopChan, os.Interrupt)
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/", homeHandler)
@@ -71,6 +84,15 @@ func main(){
 			log.Printf("listen:%\n", err)
 		}
 	}()
+
+	<-stopChan
+	log.Println("Shutting down server...")
+	ctx, cancel := context.WithTimeout(context.Background(),5*time.Second)
+	srv.Shutdown(ctx)
+	defer cancel(
+		log.Println("server gracefully stopped")
+	)
+
 }
 
 func todoHandlers() http.Handler{
