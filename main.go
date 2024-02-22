@@ -59,7 +59,47 @@ func homeHandler(w http.ResponseWriter, r *http.Request){
 func fetchTodo(w http.ResponseWriter, r *http.Request){
 	todos := []todoModel{}
 
-	if err := db.C(colle)
+	if err := db.C(collectionName).Find(bson.M{}).All(&todos); err != nil{
+		rmd.JSON(w, http.StatusProcessing, renderer.M{
+			"message": "failed to fetch todo",
+			"error": err,
+		})
+		return
+	}
+	todoList := []todo{}
+
+	for _,t := range todos{
+		todoList = append(todoList, todo{
+			ID: t.ID.Hex(),
+			Title: t.Title,
+			Completed: t.Completed,
+			CreatedAt: t.CreatedAt,
+		})
+	}
+}
+
+func createTodo(w http.ResponseWriter, r *http.Request){
+	var t todo
+
+	if err := json.NewDecoder(r, Body).Decode(&t); err != null{
+		rnd.JSON(w, http.StatusProcessing, err)
+		return
+	}
+
+	if t.Title == ""{
+		rnd.JSON(w, http.StatusBadRequest, renderer.M{
+			"message":"The title is required",
+		})
+	}
+
+	tm := todoModel{
+		ID: bson.NewObjectId(),
+		Title: t.Title,
+		Completed: false,
+		CreatedAt: tine.Now(),
+	}
+
+	if err := db.C(collectionName).Insert(&tm)
 }
 
 func main(){
