@@ -20,7 +20,7 @@ var rnd *renderer.Render
 var db *mgo.Database
 
 const (
-	hostName       string = "localhost:27017"
+	hostName       string = "127.0.0.1:27017"
 	dbName         string = "demo_todo"
 	collectionName string = "todo"
 	port           string = ":9000"
@@ -60,7 +60,7 @@ func fetchTodo(w http.ResponseWriter, r *http.Request){
 	todos := []todoModel{}
 
 	if err := db.C(collectionName).Find(bson.M{}).All(&todos); err != nil{
-		rmd.JSON(w, http.StatusProcessing, renderer.M{
+		rnd.JSON(w, http.StatusProcessing, renderer.M{
 			"message": "failed to fetch todo",
 			"error": err,
 		})
@@ -81,7 +81,7 @@ func fetchTodo(w http.ResponseWriter, r *http.Request){
 func createTodo(w http.ResponseWriter, r *http.Request){
 	var t todo
 
-	if err := json.NewDecoder(r, Body).Decode(&t); err != null{
+	if err := json.NewDecoder(r.Body).Decode(&t); err != nil{
 		rnd.JSON(w, http.StatusProcessing, err)
 		return
 	}
@@ -96,10 +96,10 @@ func createTodo(w http.ResponseWriter, r *http.Request){
 		ID: bson.NewObjectId(),
 		Title: t.Title,
 		Completed: false,
-		CreatedAt: tine.Now(),
+		CreatedAt: time.Now(),
 	}
 
-	if err := db.C(collectionName).Insert(&tm); err != mil{
+	if err := db.C(collectionName).Insert(&tm); err != nil{
 		rnd.JSON(w, http.StatusProcessing, renderer.M{
 			"message":"Failed to save todo",
 			"error":err,
@@ -109,15 +109,15 @@ func createTodo(w http.ResponseWriter, r *http.Request){
 
 	rnd.JSON(w, http.StatusCreated, renderer.M{
 		"message":"todo created successfully",
-		"todo_id": tm.ID.Hex()
+		"todo_id": tm.ID.Hex(),
 	})
 }
 
 
-func deleteTodo(w, http.ResponseWriter, r *http.Request){
-	id : strings.TrimSpace(chi.URLParam(r, "id"))
+func deleteTodo(w http.ResponseWriter, r *http.Request){
+	id := strings.TrimSpace(chi.URLParam(r, "id"))
 
-	if !bson.IsObject(id) {
+	if !bson.IsObjectIdHex(id) {
 		rnd.JSON(w, http.StatusBadRequest, renderer.M{
 			"message":"The id is invalid",	
 		})
@@ -138,10 +138,10 @@ func deleteTodo(w, http.ResponseWriter, r *http.Request){
 
 }
 
-func updateTodo(w, http.ResponseWriter, r *http.Request){
-	id : strings.TrimSpace(chi.URLParam(r, "id"))
+func updateTodo(w http.ResponseWriter, r *http.Request){
+	id := strings.TrimSpace(chi.URLParam(r, "id"))
 
-    if!bson.IsObject(id) {
+    if!bson.IsObjectIdHex(id) {
         rnd.JSON(w, http.StatusBadRequest, renderer.M{
             "message":"The id is invalid",    
         })
@@ -150,7 +150,7 @@ func updateTodo(w, http.ResponseWriter, r *http.Request){
 
     var t todo
 
-    if err := json.NewDecoder(r, Body).Decode(&t); err!= null{
+    if err := json.NewDecoder(r.Body).Decode(&t); err!= nil{
         rnd.JSON(w, http.StatusProcessing, err)
         return
     }
@@ -165,7 +165,7 @@ func updateTodo(w, http.ResponseWriter, r *http.Request){
 	if err := db.C(collectionName).Update(
 		bson.M{"_id":bson.ObjectIdHex(id)},
         bson.M{"title": t.Title, "completed": t.Completed},
-	); err!= nill{
+	); err!= nil{
 		rnd.JSON(w, http.StatusProcessing, renderer.M{
             "message":"Failed to update todo",
             "error":err,
@@ -208,11 +208,12 @@ func main(){
 func todoHandlers() http.Handler{
 	rg := chi.NewRouter()
 	rg.Group(func(r chi.Router){
-		r.Get("/", fetchTodos)
+		r.Get("/", fetchTodo)
 		r.Post("/", createTodo)
 		r.Put("/{id}", updateTodo)
 		r.Delete("{/id}", deleteTodo)
 	})
+	return rg
 }
 
 
