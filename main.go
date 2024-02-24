@@ -113,6 +113,31 @@ func createTodo(w http.ResponseWriter, r *http.Request){
 	})
 }
 
+
+func deleteTodo(w, http.ResponseWriter, r *http.Request){
+	id : strings.TrimSpace(chi.URLParam(r, "id"))
+
+	if !bson.IsObject(id) {
+		rnd.JSON(w, http.StatusBadRequest, renderer.M{
+			"message":"The id is invalid",	
+		})
+		return
+	}
+
+	if err := db.C(collectionName).RemoveId(bson.ObjectIdHex(id)); err!= nil{
+		rnd.JSON(w, http.StatusProcessing, renderer.M{
+            "message":"Failed to delete todo",
+            "error":err,
+        })
+        return
+	}
+
+	rnd.JSON(w, http.StatusOK, renderer.M{
+        "message":"todo deleted successfully",
+    })
+
+}
+
 func main(){
 	stopChan := make(chan os.Signal)
 	signal.Notify(stopChan, os.Interrupt)
