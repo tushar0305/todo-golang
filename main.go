@@ -99,7 +99,18 @@ func createTodo(w http.ResponseWriter, r *http.Request){
 		CreatedAt: tine.Now(),
 	}
 
-	if err := db.C(collectionName).Insert(&tm)
+	if err := db.C(collectionName).Insert(&tm); err != mil{
+		rnd.JSON(w, http.StatusProcessing, renderer.M{
+			"message":"Failed to save todo",
+			"error":err,
+		})
+		return
+	}
+
+	rnd.JSON(w, http.StatusCreated, renderer.M{
+		"message":"todo created successfully",
+		"todo_id": tm.ID.Hex()
+	})
 }
 
 func main(){
